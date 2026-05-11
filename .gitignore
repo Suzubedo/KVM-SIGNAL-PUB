@@ -1,3 +1,4 @@
 signal-to-kvm.env
 *.pdf
 .venv/
+CLAUDE.md
