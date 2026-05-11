@@ -27,7 +27,7 @@ check_signal_linked() {
 }
 
 check_python_deps() {
-    python3 -c "import websockets, httpx, aiohttp" 2>/dev/null
+    "${REPO_DIR}/.venv/bin/python" -c "import websockets, httpx, aiohttp" 2>/dev/null
 }
 
 check_env_file() {
@@ -79,8 +79,9 @@ ${BLD}============================================================${OFF}
         Verify: ${CYN}curl http://127.0.0.1:8080/v1/accounts${OFF}
         (should print a list with your number)
 
-  ${BLD}4.  Install Python dependencies${OFF}
-        ${CYN}pip3 install --user websockets httpx aiohttp${OFF}
+  ${BLD}4.  Create a virtual environment and install dependencies${OFF}
+        ${CYN}python3 -m venv .venv${OFF}
+        ${CYN}.venv/bin/pip install websockets httpx aiohttp${OFF}
 
   ${BLD}5.  Create your env file${OFF}
         ${CYN}cp signal-to-kvm.env.example signal-to-kvm.env${OFF}

@@ -31,6 +31,13 @@ cd glkvm-bridge
 The setup script doesn't change anything — it just tells you what to do next,
 and shows ✓/○ for each prerequisite so you can re-run it any time.
 
+**Python environment** (step 4 in the checklist):
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install websockets httpx aiohttp
+```
+
 Once everything is ✓, copy `signal-to-kvm.env.example` to `signal-to-kvm.env`
 and fill in your KVM passwords.
 
@@ -84,6 +91,7 @@ Without the suffix, the command goes to the default target.
 | `setup.sh` | First-time setup instructions |
 | `signal-to-kvm.env.example` | Config template |
 | `signal-to-kvm.env` | ⚠ Your real config — never commit |
+| `.venv/` | Python virtual environment — never commit (git-ignored) |
 
 ## Keyboard layout assumption
 

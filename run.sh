@@ -123,4 +123,11 @@ ${BLD}============================================================${OFF}
 EOF
 
 # ---------- exec ----------
-exec /usr/bin/env python3 "${REPO_DIR}/signal_to_kvm.py"
+PYTHON="${REPO_DIR}/.venv/bin/python"
+if [[ ! -x "$PYTHON" ]]; then
+    echo "${RED}✗${OFF} .venv not found. Run:"
+    echo "    python3 -m venv .venv"
+    echo "    .venv/bin/pip install websockets httpx aiohttp"
+    exit 1
+fi
+exec "$PYTHON" "${REPO_DIR}/signal_to_kvm.py"
