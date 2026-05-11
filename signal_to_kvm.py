@@ -40,6 +40,7 @@ Available commands (some short, some with long aliases)
   set-status      /ss            set-status online|busy|away — Teams presence
   change-layout   /cl            cycle macOS input source / Windows layout, screenshot
   show-calendar   /sca           jump to Teams Calendar tab, screenshot, jump back
+  focus-teams     /ft            open/focus Teams via Spotlight (Mac) or Start menu (Win)
   set-jiggler     /sj            set-jiggler on [interval]|off — toggle KVM jiggler
 
 All target-routable commands accept the -target suffix. Examples:
@@ -859,6 +860,47 @@ register_command(
     cmd_show_calendar,
     "show-calendar — Teams Calendar (Cmd/Ctrl+2), screenshot, back to Chat (Cmd/Ctrl+3).",
     aliases=["/sca"],
+)
+
+
+async def cmd_focus_teams(state: BridgeState, target_name: str, _payload: str) -> None:
+    cfg = state.config
+    t = state.targets[target_name].target
+    log.info("[%s] focus-teams", target_name)
+
+    if t.name == "mac":
+        # Spotlight: Cmd+Space
+        ok, info = await kvm_chord(t, "MetaLeft", "Space")
+    else:
+        # Windows Start menu: tap Win key alone
+        ok, info = await kvm_tap(t, "MetaLeft")
+
+    if not ok:
+        await signal_send(cfg, f"❌ [{t.display_name}] focus-teams: launcher shortcut failed ({info})")
+        return
+
+    await asyncio.sleep(cfg.search_after_focus_ms / 1000.0)
+
+    ok, info = await kvm_type_text(t, "Teams", translate=False)
+    if not ok:
+        await signal_send(cfg, f"❌ [{t.display_name}] focus-teams: typing failed ({info})")
+        return
+
+    await asyncio.sleep(cfg.search_after_type_ms / 1000.0)
+
+    ok, info = await kvm_tap(t, "Enter")
+    if not ok:
+        await signal_send(cfg, f"❌ [{t.display_name}] focus-teams: Enter failed ({info})")
+        return
+
+    await signal_send(cfg, f"✅ [{t.display_name}] Teams focused.")
+
+
+register_command(
+    "focus-teams",
+    cmd_focus_teams,
+    "focus-teams — open/focus Teams via Spotlight (Mac: Cmd+Space) or Start menu (Win: Win key).",
+    aliases=["/ft"],
 )
 
 
