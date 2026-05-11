@@ -473,6 +473,11 @@ async def cmd_search_contact(state: BridgeState, target_name: str, payload: str)
         return
     log.info("[%s] search-contact: %r", target_name, name)
 
+    ok, info = await _focus_teams_impl(t, cfg)
+    if not ok:
+        await signal_send(cfg, f"❌ [{t.display_name}] search-contact: focus-teams failed ({info})")
+        return
+
     # Cmd+G or Ctrl+G — Teams "Go to chat"
     ok, info = await kvm_teams_chord(t, "KeyG")
     if not ok:
@@ -783,6 +788,11 @@ async def cmd_set_status(state: BridgeState, target_name: str, payload: str) -> 
     slash = _STATUS_TO_SLASH[arg]
     log.info("[%s] set-status: %s → %s", target_name, arg, slash)
 
+    ok, info = await _focus_teams_impl(t, cfg)
+    if not ok:
+        await signal_send(cfg, f"❌ [{t.display_name}] set-status: focus-teams failed ({info})")
+        return
+
     ok, info = await kvm_teams_chord(t, "KeyE")
     if not ok:
         await signal_send(cfg, f"❌ [{t.display_name}] set-status: shortcut failed ({info})")
@@ -840,6 +850,11 @@ async def cmd_show_calendar(state: BridgeState, target_name: str, _payload: str)
     t = state.targets[target_name].target
     log.info("[%s] show-calendar", target_name)
 
+    ok, info = await _focus_teams_impl(t, cfg)
+    if not ok:
+        await signal_send(cfg, f"❌ [{t.display_name}] show-calendar: focus-teams failed ({info})")
+        return
+
     ok, info = await kvm_teams_chord(t, "Digit2")
     if not ok:
         await signal_send(cfg, f"❌ [{t.display_name}] show-calendar: jump failed ({info})")
@@ -863,36 +878,33 @@ register_command(
 )
 
 
+async def _focus_teams_impl(t: TargetConfig, cfg: Config) -> tuple[bool, str]:
+    if t.name == "mac":
+        ok, info = await kvm_chord(t, "MetaLeft", "Space")
+    else:
+        ok, info = await kvm_tap(t, "MetaLeft")
+    if not ok:
+        return False, f"launcher shortcut failed ({info})"
+    await asyncio.sleep(cfg.search_after_focus_ms / 1000.0)
+    ok, info = await kvm_type_text(t, "Teams", translate=False)
+    if not ok:
+        return False, f"typing failed ({info})"
+    await asyncio.sleep(cfg.search_after_type_ms / 1000.0)
+    ok, info = await kvm_tap(t, "Enter")
+    if not ok:
+        return False, f"Enter failed ({info})"
+    return True, "Teams focused"
+
+
 async def cmd_focus_teams(state: BridgeState, target_name: str, _payload: str) -> None:
     cfg = state.config
     t = state.targets[target_name].target
     log.info("[%s] focus-teams", target_name)
 
-    if t.name == "mac":
-        # Spotlight: Cmd+Space
-        ok, info = await kvm_chord(t, "MetaLeft", "Space")
-    else:
-        # Windows Start menu: tap Win key alone
-        ok, info = await kvm_tap(t, "MetaLeft")
-
+    ok, info = await _focus_teams_impl(t, cfg)
     if not ok:
-        await signal_send(cfg, f"❌ [{t.display_name}] focus-teams: launcher shortcut failed ({info})")
+        await signal_send(cfg, f"❌ [{t.display_name}] focus-teams: {info}")
         return
-
-    await asyncio.sleep(cfg.search_after_focus_ms / 1000.0)
-
-    ok, info = await kvm_type_text(t, "Teams", translate=False)
-    if not ok:
-        await signal_send(cfg, f"❌ [{t.display_name}] focus-teams: typing failed ({info})")
-        return
-
-    await asyncio.sleep(cfg.search_after_type_ms / 1000.0)
-
-    ok, info = await kvm_tap(t, "Enter")
-    if not ok:
-        await signal_send(cfg, f"❌ [{t.display_name}] focus-teams: Enter failed ({info})")
-        return
-
     await signal_send(cfg, f"✅ [{t.display_name}] Teams focused.")
 
 
