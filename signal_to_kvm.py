@@ -128,6 +128,7 @@ class Config:
     typing_settle_ms:           int = int(os.getenv("TYPING_SETTLE_MS", "300"))
     search_after_focus_ms:      int = int(os.getenv("SEARCH_AFTER_FOCUS_MS", "1000"))
     search_after_type_ms:       int = int(os.getenv("SEARCH_AFTER_TYPE_MS", "1000"))
+    focus_settle_ms:            int = int(os.getenv("FOCUS_SETTLE_MS", "2000"))
     keystroke_delay_ms:         int = int(os.getenv("KEYSTROKE_DELAY_MS", "60"))
     max_message_chars:          int = int(os.getenv("MAX_MESSAGE_CHARS", "1000"))
     jiggler_default_interval:   int = int(os.getenv("JIGGLER_DEFAULT_INTERVAL", "240"))
@@ -893,6 +894,7 @@ async def _focus_teams_impl(t: TargetConfig, cfg: Config) -> tuple[bool, str]:
     ok, info = await kvm_tap(t, "Enter")
     if not ok:
         return False, f"Enter failed ({info})"
+    await asyncio.sleep(cfg.focus_settle_ms / 1000.0)
     return True, "Teams focused"
 
 
