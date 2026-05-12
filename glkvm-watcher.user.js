@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name         GLKVM Watcher + Multi-Target Bridge Companion
 // @namespace    https://localhost/glkvm-watcher
-// @version      0.9.0
+// @version      0.10.0
 // @updateURL    https://raw.githubusercontent.com/Suzubedo/KVM-SIGNAL-PUB/main/glkvm-watcher.user.js
 // @downloadURL  https://raw.githubusercontent.com/Suzubedo/KVM-SIGNAL-PUB/main/glkvm-watcher.user.js
 // @description  Watches the KVM video for red-pixel events and acts as the daemon's eyes for one named target (mac, win, …).
-// @include      http://glkvm.local/*
-// @include      https://glkvm.local/*
+// @include      http://glkvm-mac.local/*
+// @include      https://glkvm-mac.local/*
+// @include      http://glkvm-win.local/*
+// @include      https://glkvm-win.local/*
 // @include      http://192.168.*
 // @include      https://192.168.*
 // @include      *://*.glkvm.xyz/*
@@ -31,14 +33,11 @@
     // Target is derived from the KVM hostname at boot — no manual override needed.
     function detectTargetId() {
         const host = (location.hostname || '').toLowerCase();
-        const map = [
-            { keys: ['mac', 'macbook', 'mba'],   id: 'mac' },
-            { keys: ['win', 'windows', 'pc'],    id: 'win' },
-        ];
-        for (const m of map) {
-            if (m.keys.some(k => host.includes(k))) return m.id;
-        }
-        return '';
+        const map = {
+            'glkvm-mac.local': 'mac',
+            'glkvm-win.local': 'win',
+        };
+        return map[host] || '';
     }
 
     const KEYS = {
