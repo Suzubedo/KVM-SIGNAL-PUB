@@ -342,7 +342,9 @@ userscript fulfils screenshot requests (capture from `<video>`, POST the
 PNG back) and reconciles its watcher state with the daemon's flag.
 
 The userscript auto-detects its target from `location.hostname` (looks for
-"mac"/"win" substrings) and falls back to manual config in the panel.
+"mac"/"win" substrings). If the hostname doesn't match, the panel shows an
+error and the bridge won't poll — fix by updating `detectTargetId()` in the
+userscript.
 
 ### `run.sh` (the launcher)
 
