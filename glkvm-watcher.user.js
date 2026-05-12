@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GLKVM Watcher + Multi-Target Bridge Companion
 // @namespace    https://localhost/glkvm-watcher
-// @version      0.8.0
+// @version      0.9.0
 // @description  Watches the KVM video for red-pixel events and acts as the daemon's eyes for one named target (mac, win, …).
 // @include      http://glkvm.local/*
 // @include      https://glkvm.local/*
@@ -26,14 +26,9 @@
     console.log('[watcher] booting on', location.href);
 
     // ---------- config ----------
-    // ---------- target auto-detect ----------
-    // The userscript runs on each KVM tab. Each tab needs a "target id" matching
-    // the daemon's configured targets (e.g. "mac", "win"). We try to auto-detect
-    // from the URL hostname so each tab self-identifies without manual setup.
-    // Manual override via the panel still works and takes precedence if set.
-    function autoDetectTargetId() {
+    // Target is derived from the KVM hostname at boot — no manual override needed.
+    function detectTargetId() {
         const host = (location.hostname || '').toLowerCase();
-        // Heuristics — adjust the keywords list as your hostnames evolve.
         const map = [
             { keys: ['mac', 'macbook', 'mba'],   id: 'mac' },
             { keys: ['win', 'windows', 'pc'],    id: 'win' },
@@ -41,11 +36,10 @@
         for (const m of map) {
             if (m.keys.some(k => host.includes(k))) return m.id;
         }
-        return '';  // unknown — user must set manually
+        return '';
     }
 
     const KEYS = {
-        targetId: 'rw_target_id',
         signalUrl: 'rw_sig_url',
         signalFrom: 'rw_sig_from',
         signalTo: 'rw_sig_to',
@@ -63,12 +57,8 @@
         bridgeEnabled: 'rw_bridge_enabled',
     };
 
-    // For target id: stored value wins, otherwise auto-detect.
-    const storedTargetId = GM_getValue(KEYS.targetId, '');
-    const detectedTargetId = autoDetectTargetId();
-
     const cfg = {
-        targetId:      storedTargetId || detectedTargetId,
+        targetId:      detectTargetId(),
         signalUrl:     GM_getValue(KEYS.signalUrl, 'http://127.0.0.1:8080'),
         signalFrom:    GM_getValue(KEYS.signalFrom, ''),
         signalTo:      GM_getValue(KEYS.signalTo, ''),
@@ -85,9 +75,7 @@
         bridgeUrl:     GM_getValue(KEYS.bridgeUrl, 'http://127.0.0.1:8765'),
         bridgeEnabled: GM_getValue(KEYS.bridgeEnabled, true),
     };
-    if (detectedTargetId && !storedTargetId) {
-        console.log('[watcher] auto-detected target id from hostname:', detectedTargetId);
-    }
+    console.log('[watcher] target id from hostname:', cfg.targetId || '(unknown)');
 
     let watching = false;
     let watchTimer = null;
@@ -370,8 +358,6 @@
 
             '<details open style="margin-bottom:6px;">' +
                 '<summary style="cursor:pointer;font-size:12px;">Daemon bridge</summary>' +
-                '<label>Target ID (must match daemon, e.g. mac, win)</label>' +
-                '<input id="rw-target-id" type="text" placeholder="mac">' +
                 '<label>Daemon URL</label>' +
                 '<input id="rw-bridge-url" type="text" placeholder="http://192.168.x.x:8765">' +
                 '<label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;">' +
@@ -440,7 +426,6 @@
     function setStatus(t, color) { statusEl.textContent = t; if (color) statusEl.style.color = color; }
 
     // hydrate
-    $('#rw-target-id').value = cfg.targetId;
     $('#rw-bridge-url').value = cfg.bridgeUrl;
     $('#rw-bridge-enabled').checked = cfg.bridgeEnabled;
     $('#rw-sig-url').value = cfg.signalUrl;
@@ -457,7 +442,6 @@
     $('#rw-int').value = cfg.intervalMs; $('#rw-cd').value = cfg.cooldownMs;
 
     function persist() {
-        cfg.targetId = $('#rw-target-id').value.trim().toLowerCase();
         cfg.bridgeUrl = $('#rw-bridge-url').value.trim();
         cfg.bridgeEnabled = $('#rw-bridge-enabled').checked;
         cfg.signalUrl = $('#rw-sig-url').value.trim();
@@ -534,8 +518,8 @@
     });
 
     if (!cfg.targetId) {
-        setStatus('set Target ID first (e.g. "mac")', '#FFD27C');
-        setBridgeStatus('bridge: target id not set', '#FFB347');
+        setStatus('hostname not recognised — update detectTargetId()', '#FFD27C');
+        setBridgeStatus('bridge: unknown target', '#FFB347');
     } else {
         setStatus('ready (' + cfg.targetId + ')');
     }
