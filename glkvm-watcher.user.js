@@ -2,6 +2,8 @@
 // @name         GLKVM Watcher + Multi-Target Bridge Companion
 // @namespace    https://localhost/glkvm-watcher
 // @version      0.9.0
+// @updateURL    https://raw.githubusercontent.com/Suzubedo/KVM-SIGNAL-PUB/main/glkvm-watcher.user.js
+// @downloadURL  https://raw.githubusercontent.com/Suzubedo/KVM-SIGNAL-PUB/main/glkvm-watcher.user.js
 // @description  Watches the KVM video for red-pixel events and acts as the daemon's eyes for one named target (mac, win, …).
 // @include      http://glkvm.local/*
 // @include      https://glkvm.local/*
