@@ -565,6 +565,39 @@ register_command(
 )
 
 
+_TYPE_TEXT_MAX_CHARS = 10_000
+
+
+async def cmd_type_text(state: BridgeState, target_name: str, payload: str) -> None:
+    cfg = state.config
+    ts = state.targets[target_name]
+    t = ts.target
+
+    msg = _strip_quotes(payload)
+    if not msg:
+        await signal_send(cfg, '⚠️ type-text: empty body. Usage: type-text "your text"')
+        return
+    if len(msg) > _TYPE_TEXT_MAX_CHARS:
+        await signal_send(cfg, f"⚠️ type-text: too long ({len(msg)}/{_TYPE_TEXT_MAX_CHARS}).")
+        return
+
+    log.info("[%s] type-text: %d chars", target_name, len(msg))
+    ok, info = await kvm_type_text(t, msg)
+    if not ok:
+        await signal_send(cfg, f"❌ [{t.display_name}] type-text: typing failed ({info})")
+        return
+
+    await signal_send(cfg, f"✅ [{t.display_name}] typed {len(msg)} chars.")
+
+
+register_command(
+    "type-text",
+    cmd_type_text,
+    'type-text "your text" — types into focused box, no screenshot, no confirm. Up to 10 000 chars.',
+    aliases=["/tt"],
+)
+
+
 async def cmd_make_screenshot(state: BridgeState, target_name: str, _payload: str) -> None:
     cfg = state.config
     t = state.targets[target_name].target
